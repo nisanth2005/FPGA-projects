@@ -1,0 +1,22 @@
+module clk_div_1s(
+    input clk,
+    input rst,
+    output reg one_sec
+);
+    reg [26:0] div_count = 0;  // 27 bits enough for 100,000,000
+
+    always @(posedge clk or posedge rst) begin
+        if(rst) begin
+            div_count <= 0;
+            one_sec <= 0;
+        end else begin
+            if(div_count == 100_000_000 - 1) begin
+                div_count <= 0;
+                one_sec <= 1;  // 1-clock pulse
+            end else begin
+                div_count <= div_count + 1;
+                one_sec <= 0;
+            end
+        end
+    end
+endmodule

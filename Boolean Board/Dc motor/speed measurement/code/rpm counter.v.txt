@@ -1,0 +1,34 @@
+`timescale 1ns / 1ps
+module rpm_counter #(
+    parameter PULSES_PER_REV = 1   // set according to your sensor (e.g., 1 pulse per rev)
+)(
+    input clk,          // system clock
+    input rst,          // active-high reset
+    input one_sec,      // 1-second enable pulse
+    input sensor,       // sensor input (LM393 OUT)
+    output reg [15:0] rpm  // calculated RPM
+);
+
+    reg [15:0] pulse_count = 0;  // counts pulses within 1 second
+    reg sensor_d = 0;             // delayed sensor for edge detection
+
+    always @(posedge clk) begin
+        if (rst) begin
+            pulse_count <= 0;
+            rpm <= 0;
+            sensor_d <= 0;
+        end else begin
+            // edge detection
+            sensor_d <= sensor;
+            if (sensor & ~sensor_d)
+                pulse_count <= pulse_count + 1;
+
+            // calculate RPM every one_sec pulse
+            if (one_sec) begin
+                rpm <= (pulse_count * 60) / PULSES_PER_REV;
+                pulse_count <= 0;  // reset counter for next second
+            end
+        end
+    end
+
+endmodule

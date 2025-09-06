@@ -1,0 +1,62 @@
+`timescale 1ns / 1ps
+module motor_control_top(
+    input clk,             // 100 MHz clock
+    input rst,             // Reset (active high)
+    input [1:0] value,     // Duty cycle selection
+    input dir,             // Motor direction
+    input sensor,          // LM393 sensor input
+    output pwm_out,        // PWM to ENA
+    output in1, 
+    output in2,            // Motor direction pins
+    output [3:0] an,       // Seven-segment anodes
+    output [6:0] seg       // Seven-segment segments
+);
+
+    wire one_sec;           // 1-second pulse
+    wire [15:0] rpm_val;    // RPM value
+
+    // ===================================
+    // 1. PWM Generator
+    // ===================================
+    pwm dut1 (
+        .clk(clk),
+        .rst(rst),
+        .value(value),
+        .dir(dir),
+        .pwm_out(pwm_out),
+        .in1(in1),
+        .in2(in2)
+    );
+
+    // ===================================
+    // 2. Clock Divider (1-second pulse)
+    // ===================================
+    clk_div_1s dut2 (
+        .clk(clk),
+        .rst(rst),
+        .one_sec(one_sec)
+    );
+
+    // ===================================
+    // 3. RPM Counter
+    // ===================================
+    rpm_counter #(.PULSES_PER_REV(20)) dut3 (  // adjust "20" for encoder slots
+        .clk(clk),
+        .rst(rst),
+        .one_sec(one_sec),
+        .sensor(sensor),
+        .rpm(rpm_val)
+    );
+
+    // ===================================
+    // 4. Seven-Segment Display Driver
+    // ===================================
+    seven_seg_driver dut4 (
+        .clk(clk),
+        .rst(rst),
+        .value(rpm_val),
+        .an(an),
+        .seg(seg)
+    );
+
+endmodule

@@ -1,0 +1,62 @@
+module display_four_digits(
+    input clk,             // fast FPGA clock
+    output reg [3:0] an1,
+    output reg [3:0] an2,   // anode pins
+    output reg [6:0] seg1, 
+    output reg [6:0] seg2  
+);
+
+    reg [25:0] counter = 0;    // big counter for delay
+    reg [2:0] state = 0;       // to step through A-G
+
+    // Clock divider for visible delay
+    always @(posedge clk) begin
+        counter <= counter + 1;
+        if (counter == 26'd50000000) begin  // ~0.5 second delay @ 100MHz
+            counter <= 0;
+            if (state == 3'd7)   // After G, go back to A
+                state <= 0;
+            else
+                state <= state + 1;
+        end
+    end
+
+    // Multiplex each digit with its unique segment pattern
+    always @(*) begin
+        case (state)
+            3'd0: begin
+                an1  = 4'b0111;      // first digit
+                seg1 = 7'b0001000;
+            end
+            3'd1: begin
+                an1  = 4'b1011;      // second digit
+                seg1 = 7'b0000000;
+            end
+            3'd2: begin
+                an1  = 4'b1101;      // third digit
+                seg1 = 7'b0110001;
+            end
+            3'd3: begin
+                an1  = 4'b1110;      // fourth digit
+                seg1 = 7'b0000001;
+            end
+            3'd4: begin
+                an2  = 4'b0111;      // repeat first digit
+                seg2 = 7'b0110000;
+            end
+            3'd5: begin
+                an2  = 4'b1011;      // repeat second digit
+                seg2 = 7'b0111000;
+                end
+                3'd6: begin
+                an2  = 4'b1101;      // third digit
+                seg2 = 7'b0100000;
+            end
+            3'd7: begin
+                an2  = 4'b1110;      // fourth digit
+                seg2 = 7'b1001000;
+            end
+        endcase
+    end
+
+endmodule
